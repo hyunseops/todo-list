@@ -15,7 +15,7 @@
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: blueviolet;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -40,7 +40,7 @@
 
 .header {
   font-size: 5rem;
-  color: red;
+  color: blueviolet;
 }
 
 .filter-container {
@@ -61,12 +61,12 @@
 }
 
 .button {
-  background-color: white;
+  background-color: greenyellow;
   border-radius: 10px;
 }
 
 .green-background {
-  background-color: green;
+  background-color: white;
 }
 
 .todo-list-container {
