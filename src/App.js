@@ -1,48 +1,67 @@
-import {v4 as uuid} from "uuid";
+import { v4 as uuid } from "uuid";
 import "./App.css";
 import { useState } from "react";
-
-// camelcase -> 띄어쓰기가 필요한 곳에 대문자로 표시한다
-// ex) background-color -> backgroundColor
-//     font-size -> fontSize
-
+​
 function App() {
-  // react way
+  // state 새로운 값으로 대체한다
   const [inputValue, setInputValue] = useState("");
-  /**
-   * 세트메뉴
-   * {
-   *  id: 중복되지 않는 id값
-   *  name: 메뉴 이름
-   *  price: 가격
-   *  hamburger: 햄버거 종류
-   *  isPotato: 감자튀김 받을지 말지
-   *  soda: 음료수 종류
-   * }
-   */
-  /**
-   * TODO object, 객체
-   * {
-   *  id: 중복되지 않는 id값,
-   *  content: 할일에 대해 적은 내용 string ('할일 1')
-   *  createAt: 생성된 시간 number (0~3939393939~)
-   *  isDone: 완료 여부 (boolean)
-   * }
-   * */
   const [todos, setTodos] = useState([]);
-  const [doneTodos, setDoneTodos] = useState(
-    Array.from({ length: todos.length }, () => false)
-  );
-  // state 변화하는 값, 임시 값
-  // React -> state가 변할때마다 화면을 다시 그린다.
-  // ["할일 1", "할일 2"];
-
+  const [sort, setSort] = useState("");
+  const [filter, setFilter] = useState("ALL");
+​
+  const [updateValue, setUpdateValue] = useState("");
+  const [updateTargetIndex, setUpdateTargetIndex] = useState(-1);
+  /** computedValue */
+  const isUpdateMode = updateTargetIndex >= 0;
+​
+  const computedTodos = todos
+    .filter((todo) => {
+      if (filter === "ALL") return true;
+      if (filter === "DONE") return todo.isDone === true;
+      if (filter === "NOT_DONE") return todo.isDone === false;
+    })
+    .sort((a, b) => {
+      if (sort === "none") return 0;
+      if (sort === "createdAt") return b.createdAt - a.createdAt;
+      if (sort === "content") return a.content.localeCompare(b.content);
+    });
+​
   return (
-    // JSX (JS -> HTML)
     <div className="App">
       <h1>TODO LIST</h1>
       <div>
-        {/* () => {} */}
+        <label>필터 : </label>
+        <input
+          type="radio"
+          value="ALL"
+          checked={filter === "ALL"}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+        <label>전체</label>
+        <input
+          type="radio"
+          value="DONE"
+          checked={filter === "DONE"}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+        <label>완료</label>
+        <input
+          type="radio"
+          value="NOT_DONE"
+          checked={filter === "NOT_DONE"}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+        <label>미완료</label>
+      </div>
+      <div>
+        <label htmlFor="sort">정렬 : </label>
+        <select value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="none">생성순</option>
+          <option value="createdAt">최신순</option>
+          <option value="content">가나다순</option>
+        </select>
+      </div>
+      <div>
         <input
           // Input의 제어권을 React(JS)가 가지고 있을 수 있게, state값을 주입했다.
           value={inputValue}
@@ -53,53 +72,79 @@ function App() {
         />
         <button
           onClick={() => {
-            // spread 연산자
-            
             const newTodo = {
               id: uuid(),
               content: inputValue,
-              createdAt: Date.now(),
               isDone: false,
+              createdAt: Date.now(),
             };
             setTodos([...todos, newTodo]);
             setInputValue("");
           }}
         >
-          ADD
+          {"ADD"}
         </button>
       </div>
-      
-      {/* DRY Don't Repeat Yourself */}
-      {/* [할일 1, 할일 2]  */}
-      {todos.map((todo, index) => (
-        <div key={todo.id}>
-          <input 
-            type="checkbox" 
-            checked={todo.isDone} 
-            onChange={(e) => {
-            /**
-             * todos :
-             * { content: "할일 1"
-             * createdAt: 16977~
-             * id: "2832dfdff~"
-             * isDone: false },
-             * 두번째 todo,
-             * 세번째 todo
-             */
-              const nextTodos = todos.map((todo, idx) => 
-                idx === index ? {...todo, isDone: e.target.checked} : todo
-              );
-              setTodos(nextTodos);
-            }}
-          />
-          <span style={{ textDecoration: todo.isDone ? "line-through" : ""}}>
-            {todo.content}
-          </span>
-          <button>DEL</button>
-        </div>
-      ))}
+      <div>
+        {computedTodos.map((todo, index) => (
+          <div key={todo.id}>
+            <input
+              type="checkbox"
+              checked={todo.isDone}
+              onChange={(e) => {
+                const nextTodos = todos.map((todo, idx) =>
+                  idx === index ? { ...todo, isDone: e.target.checked } : todo
+                );
+                setTodos(nextTodos);
+              }}
+            />
+            {updateTargetIndex === index ? (
+              <input
+                value={updateValue}
+                onChange={(e) => setUpdateValue(e.target.value)}
+              />
+            ) : (
+              <span
+                style={{ textDecoration: todo.isDone ? "line-through" : "" }}
+              >
+                {todo.content}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                const nextTodos = todos.filter((_, idx) => idx !== index);
+                setTodos(nextTodos);
+              }}
+              disabled={isUpdateMode}
+            >
+              DEL
+            </button>
+            <button
+              onClick={() => {
+                if (isUpdateMode) {
+                  const nextTodos = todos.map((todo, index) =>
+                    index === updateTargetIndex
+                      ? { ...todo, content: updateValue }
+                      : todo
+                  );
+                  setTodos(nextTodos);
+                  setUpdateValue("");
+                  setUpdateTargetIndex(-1);
+                  return;
+                }
+​
+                setUpdateTargetIndex(index);
+                setUpdateValue(todo.content);
+              }}
+              disabled={isUpdateMode && index !== updateTargetIndex}
+            >
+              UPDATE
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
+​
 export default App;
